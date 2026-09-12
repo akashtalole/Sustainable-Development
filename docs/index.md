@@ -7,6 +7,7 @@ This site collects ideas, notes, and resources for building tech-enabled solutio
 ## What's here
 
 - **[SDG Project Ideas](sdg-ideas.md)** — concrete, buildable project ideas mapped to each of the 17 goals.
+- **[2026 Challenges](challenges-2026.md)** — research on where global SDG progress stands as of September 2026, and what it means for these ideas.
 
 ## About the SDGs
 

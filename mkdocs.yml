@@ -37,6 +37,7 @@ theme:
 nav:
   - Home: index.md
   - SDG Project Ideas: sdg-ideas.md
+  - 2026 Challenges: challenges-2026.md
 
 markdown_extensions:
   - admonition
