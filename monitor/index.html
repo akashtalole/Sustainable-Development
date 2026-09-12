@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SDG World Monitor</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="app-header">
+        <div class="brand">
+          <span class="brand-title">SDG World Monitor</span>
+          <span class="brand-sub">Live country indicators for the 17 UN Sustainable Development Goals</span>
+        </div>
+        <nav id="goal-nav" aria-label="Select SDG goal"></nav>
+      </header>
+
+      <main id="map-wrap">
+        <div id="map"></div>
+        <div id="panel">
+          <div id="layer-info"></div>
+          <div id="legend"></div>
+        </div>
+      </main>
+
+      <footer id="app-footer">
+        Data: World Bank Open Data (no key required) · Boundaries: Natural Earth 1:110m ·
+        Design pattern inspired by <a href="https://www.worldmonitor.app/" target="_blank" rel="noopener">World Monitor</a>
+        (<a href="https://github.com/koala73/worldmonitor" target="_blank" rel="noopener">source</a>) ·
+        See also: <a href="../">home</a> · <a href="../sdg-ideas/">project ideas</a> · <a href="../challenges-2026/">2026 challenges</a>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

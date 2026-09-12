@@ -27,11 +27,31 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install dependencies
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: monitor/package-lock.json
+
+      - name: Install docs dependencies
         run: pip install -r requirements.txt
 
-      - name: Build site
+      - name: Build docs site
         run: mkdocs build --strict
+
+      - name: Install monitor dependencies
+        working-directory: monitor
+        run: npm ci
+
+      - name: Build monitor app
+        working-directory: monitor
+        run: npm run build
+
+      - name: Merge monitor app into docs site
+        run: |
+          mkdir -p site/monitor
+          cp -r monitor/dist/. site/monitor/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
