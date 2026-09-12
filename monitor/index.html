@@ -13,8 +13,23 @@
           <span class="brand-title">SDG World Monitor</span>
           <span class="brand-sub">Live country indicators for the 17 UN Sustainable Development Goals</span>
         </div>
-        <nav id="goal-nav" aria-label="Select SDG goal"></nav>
+        <div class="header-controls">
+          <div class="search-box">
+            <input
+              id="country-search"
+              type="text"
+              list="country-list"
+              placeholder="Jump to a country…"
+              autocomplete="off"
+              aria-label="Search for a country"
+            />
+            <datalist id="country-list"></datalist>
+          </div>
+          <button id="rankings-toggle" class="ghost-btn" type="button">Rankings</button>
+        </div>
       </header>
+
+      <nav id="goal-nav" aria-label="Select SDG goal"></nav>
 
       <main id="map-wrap">
         <div id="map"></div>
@@ -22,6 +37,15 @@
           <div id="layer-info"></div>
           <div id="legend"></div>
         </div>
+
+        <aside id="side-panel" hidden>
+          <div class="side-panel-header">
+            <button id="side-panel-back" class="ghost-btn" type="button" hidden>&larr; Rankings</button>
+            <span id="side-panel-title"></span>
+            <button id="side-panel-close" class="icon-btn" type="button" aria-label="Close">&times;</button>
+          </div>
+          <div id="side-panel-body"></div>
+        </aside>
       </main>
 
       <footer id="app-footer">
