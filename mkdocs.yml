@@ -1,0 +1,50 @@
+site_name: Sustainable Development
+site_description: Project ideas and resources for the UN Sustainable Development Goals (SDGs)
+site_url: https://akashtalole.github.io/Sustainable-Development/
+repo_name: akashtalole/Sustainable-Development
+repo_url: https://github.com/akashtalole/Sustainable-Development
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      accent: light green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.action.edit
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - SDG Project Ideas: sdg-ideas.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+
+plugins:
+  - search
