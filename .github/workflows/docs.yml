@@ -53,6 +53,12 @@ jobs:
           mkdir -p site/monitor
           cp -r monitor/dist/. site/monitor/
 
+      - name: Merge carbon calculator into docs site
+        run: |
+          mkdir -p site/carbon-calculator
+          cp carbon-calculator/index.html carbon-calculator/style.css carbon-calculator/script.js site/carbon-calculator/
+          cp -r carbon-calculator/data site/carbon-calculator/data
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

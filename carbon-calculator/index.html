@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carbon Footprint Calculator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="app-header">
+        <div class="brand">
+          <span class="brand-title">Carbon Footprint Calculator</span>
+          <span class="brand-sub">Estimate your household's annual CO<sub>2</sub>e emissions from travel, home energy, and diet — SDG 13, Climate Action</span>
+        </div>
+      </header>
+
+      <main id="main">
+        <form id="calc-form">
+          <fieldset class="card">
+            <legend>🚗 Travel <span class="legend-sub">(your own usage)</span></legend>
+
+            <label>
+              Car type
+              <select id="carType">
+                <option value="none">No car / don't drive</option>
+                <option value="small">Small petrol car</option>
+                <option value="medium" selected>Medium petrol car</option>
+                <option value="large">Large car / SUV</option>
+                <option value="diesel">Diesel car</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="electric">Electric (grid average)</option>
+              </select>
+            </label>
+
+            <label>
+              Car distance per week (km)
+              <input type="number" id="carKmWeekly" min="0" step="1" value="100" />
+            </label>
+
+            <label>
+              Bus travel per week (km)
+              <input type="number" id="busKmWeekly" min="0" step="1" value="0" />
+            </label>
+
+            <label>
+              Train/rail travel per week (km)
+              <input type="number" id="railKmWeekly" min="0" step="1" value="0" />
+            </label>
+
+            <label>
+              Short-haul flights per year <span class="hint">(&lt; ~3hr, round trip)</span>
+              <input type="number" id="shortFlights" min="0" step="1" value="0" />
+            </label>
+
+            <label>
+              Long-haul flights per year <span class="hint">(&gt; ~3hr, round trip)</span>
+              <input type="number" id="longFlights" min="0" step="1" value="0" />
+            </label>
+          </fieldset>
+
+          <fieldset class="card">
+            <legend>🏠 Home Energy <span class="legend-sub">(whole household)</span></legend>
+
+            <label>
+              Electricity use per month (kWh)
+              <input type="number" id="elecKwhMonthly" min="0" step="1" value="300" />
+            </label>
+
+            <label>
+              Share from renewables (%)
+              <input type="range" id="renewablePct" min="0" max="100" step="5" value="0" />
+              <span id="renewablePctLabel" class="range-value">0%</span>
+            </label>
+
+            <label>
+              Natural gas / heating use per month (kWh) <span class="hint">(0 if all-electric)</span>
+              <input type="number" id="gasKwhMonthly" min="0" step="1" value="200" />
+            </label>
+
+            <label>
+              People in household
+              <input type="number" id="householdSize" min="1" step="1" value="2" />
+            </label>
+          </fieldset>
+
+          <fieldset class="card">
+            <legend>🍽️ Diet <span class="legend-sub">(yours personally)</span></legend>
+
+            <label>
+              Typical diet
+              <select id="diet">
+                <option value="heavy">Meat with most meals (incl. red meat)</option>
+                <option value="average" selected>Average (meat most days)</option>
+                <option value="low">Low meat (mostly poultry/fish)</option>
+                <option value="vegetarian">Vegetarian</option>
+                <option value="vegan">Vegan</option>
+              </select>
+            </label>
+          </fieldset>
+
+          <fieldset class="card">
+            <legend>🌍 Compare to</legend>
+            <label>
+              Country
+              <select id="country"></select>
+            </label>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="button" id="reset-btn" class="ghost-btn">Reset</button>
+          </div>
+        </form>
+
+        <section id="results" aria-live="polite">
+          <div class="result-total">
+            <span id="total-value">0.0</span>
+            <span class="result-unit">tCO₂e / year</span>
+          </div>
+
+          <div class="breakdown" id="breakdown"></div>
+
+          <div class="compare" id="compare">
+            <h3>How that compares</h3>
+            <div id="compare-bars"></div>
+          </div>
+
+          <div class="tips" id="tips">
+            <h3>Where to focus</h3>
+            <ul id="tips-list"></ul>
+          </div>
+
+          <details class="methodology">
+            <summary>Methodology &amp; sources</summary>
+            <p>
+              Emission factors are rough, commonly-cited public averages (comparable to typical DEFRA/EPA-style
+              consumer calculators) for travel (car by type, bus, rail, flights), home energy (grid electricity,
+              natural gas), and diet (by broad dietary pattern). They are not country-specific, lifecycle-audited,
+              or a substitute for a professional carbon audit — treat the total as a rough order of magnitude and
+              the category breakdown as a guide to where your biggest levers are.
+            </p>
+            <p>
+              The national comparison figure is each country's most recent per-capita CO<sub>2</sub> (excluding
+              land use/forestry) from the
+              <a href="https://data.worldbank.org/indicator/EN.GHG.CO2.PC.CE.AR5" target="_blank" rel="noopener">World Bank</a>
+              — an all-sectors average (industry, transport, power generation, government), not a personal
+              lifestyle figure, so it's context rather than a like-for-like comparison.
+            </p>
+            <p>Nothing you enter here is sent anywhere — inputs are saved only in your browser's local storage.</p>
+          </details>
+        </section>
+      </main>
+
+      <footer id="app-footer">
+        See also: <a href="../">home</a> · <a href="../sdg-ideas/">project ideas</a> ·
+        <a href="../challenges-2026/">2026 challenges</a> · <a href="../monitor/">SDG World Monitor</a>
+      </footer>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
