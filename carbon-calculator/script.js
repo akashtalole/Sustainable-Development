@@ -3,9 +3,9 @@
 /**
  * Emission factors are rough, commonly-cited public averages (comparable to
  * the kind used by DEFRA/EPA-style consumer calculators), not
- * country-specific or lifecycle-audited figures. See README.md for sources
- * and caveats. Everything here is meant to show relative impact and rough
- * scale, not a precise personal audit.
+ * lifecycle-audited figures. See README.md and the in-page "Methodology &
+ * sources" panel for details and caveats. Everything here is meant to show
+ * relative impact and rough scale, not a precise personal audit.
  */
 const FACTORS = {
   car: {
@@ -24,7 +24,7 @@ const FACTORS = {
   flightLongPerKm: 0.115, // kg CO2e per passenger-km, economy long-haul
   flightShortRoundTripKm: 1500, // typical short-haul round trip distance
   flightLongRoundTripKm: 11000, // typical long-haul round trip distance
-  electricityPerKwh: 0.475, // kg CO2e per kWh, rough global grid average
+  electricityPerKwhFallback: 0.475, // kg CO2e per kWh, used only if no country's grid data is available
   gasPerKwh: 0.203, // kg CO2e per kWh, natural gas combustion
 };
 
@@ -35,6 +35,16 @@ const DIET_FOOTPRINT_KG = {
   low: 1900,
   vegetarian: 1700,
   vegan: 1500,
+};
+
+// Rough annual personal footprint for new goods & services (clothes,
+// electronics, other purchases), in kg CO2e/year — see the in-page
+// methodology panel for why this one is the least precise category.
+const GOODS_FOOTPRINT_KG = {
+  none: 150,
+  low: 400,
+  average: 900,
+  high: 1800,
 };
 
 // Reference points for the comparison chart (all in tCO2e/person/year).
@@ -55,15 +65,17 @@ const FIELDS = [
   { id: "gasKwhMonthly", kind: "number", default: 200 },
   { id: "householdSize", kind: "number", default: 2 },
   { id: "diet", kind: "select", default: "average" },
+  { id: "goods", kind: "select", default: "average" },
   { id: "country", kind: "select", default: "" },
 ];
 
 const STORAGE_KEY = "carbon-calculator-inputs-v1";
 
-const CATEGORY_COLOR = { travel: "#0a97d9", home: "#fcc30b", diet: "#3f7e44" };
-const CATEGORY_LABEL = { travel: "Travel", home: "Home", diet: "Diet" };
+const CATEGORY_COLOR = { travel: "#0a97d9", home: "#fcc30b", diet: "#3f7e44", goods: "#bf8b2e" };
+const CATEGORY_LABEL = { travel: "Travel", home: "Home", diet: "Diet", goods: "Shopping" };
 
 let countryData = {};
+let gridData = {};
 
 function readInputs() {
   const values = {};
@@ -84,6 +96,12 @@ function writeInputs(values) {
   document.getElementById("renewablePctLabel").textContent = `${values.renewablePct ?? 0}%`;
 }
 
+/** kg CO2e per kWh for the given country, falling back to a global average. */
+function electricityFactorFor(countryIso3) {
+  const grid = gridData[countryIso3];
+  return grid ? grid.gPerKwh / 1000 : FACTORS.electricityPerKwhFallback;
+}
+
 function calculate(v) {
   const carKg = FACTORS.car[v.carType] * v.carKmWeekly * 52;
   const busKg = FACTORS.bus * v.busKmWeekly * 52;
@@ -93,18 +111,21 @@ function calculate(v) {
     v.longFlights * FACTORS.flightLongRoundTripKm * FACTORS.flightLongPerKm;
   const travelKg = carKg + busKg + railKg + flightsKg;
 
-  const elecKg = v.elecKwhMonthly * 12 * FACTORS.electricityPerKwh * (1 - v.renewablePct / 100);
+  const electricityFactor = electricityFactorFor(v.country);
+  const elecKg = v.elecKwhMonthly * 12 * electricityFactor * (1 - v.renewablePct / 100);
   const gasKg = v.gasKwhMonthly * 12 * FACTORS.gasPerKwh;
   const householdSize = Math.max(1, v.householdSize);
   const homeKg = (elecKg + gasKg) / householdSize;
 
   const dietKg = DIET_FOOTPRINT_KG[v.diet] ?? DIET_FOOTPRINT_KG.average;
+  const goodsKg = GOODS_FOOTPRINT_KG[v.goods] ?? GOODS_FOOTPRINT_KG.average;
 
   return {
     travel: travelKg,
     home: homeKg,
     diet: dietKg,
-    total: travelKg + homeKg + dietKg,
+    goods: goodsKg,
+    total: travelKg + homeKg + dietKg + goodsKg,
   };
 }
 
@@ -114,8 +135,9 @@ function fmtTonnes(kg) {
 
 function renderBreakdown(results) {
   const el = document.getElementById("breakdown");
-  const max = Math.max(results.travel, results.home, results.diet, 1);
-  el.innerHTML = ["travel", "home", "diet"]
+  const keys = ["travel", "home", "diet", "goods"];
+  const max = Math.max(...keys.map((k) => results[k]), 1);
+  el.innerHTML = keys
     .map((key) => {
       const pct = Math.max(2, (results[key] / max) * 100);
       return `
@@ -165,6 +187,16 @@ function renderCompare(results, countryIso3) {
   document.getElementById("compare").appendChild(note);
 }
 
+function renderGridNote(countryIso3) {
+  const note = document.getElementById("grid-intensity-note");
+  const grid = gridData[countryIso3];
+  if (grid) {
+    note.textContent = `Using ${grid.name}'s grid: ${grid.gPerKwh.toFixed(0)} gCO₂/kWh (${grid.year}, Ember/Our World in Data).`;
+  } else {
+    note.textContent = `Using a rough global average grid: ${(FACTORS.electricityPerKwhFallback * 1000).toFixed(0)} gCO₂/kWh. Pick a country above for a real figure — it varies 20x between grids.`;
+  }
+}
+
 const TIPS = {
   travel: [
     "Combine short car trips, or switch a few to walking/cycling — most fuel is wasted on short cold-start trips.",
@@ -172,7 +204,7 @@ const TIPS = {
     "Swap one short-haul flight a year for rail where a reasonable route exists — short flights are disproportionately carbon-intensive per km.",
   ],
   home: [
-    "Ask your utility about a renewable energy tariff — the 'share from renewables' slider shows how much that alone would cut this category.",
+    "Ask your utility about a renewable energy tariff — the green-tariff slider shows how much that alone would cut this category on top of your grid.",
     "Draught-proofing and lowering the thermostat by 1–2°C typically cuts heating use by 5–10% for minimal cost.",
     "If your gas heating use is high, a heat pump can cut this category substantially over time, though the upfront cost is real.",
   ],
@@ -180,6 +212,11 @@ const TIPS = {
     "Cutting red meat to a few times a week (rather than daily) is one of the single biggest per-meal changes most people can make.",
     "Shifting a few meat meals a week to plant-based alternatives adds up faster than most people expect.",
     "Food waste counts too — the emissions from producing food that's thrown out are 'wasted' twice.",
+  ],
+  goods: [
+    "Buying secondhand or repairing instead of replacing avoids most of an item's manufacturing footprint, which is usually the majority of its lifetime impact.",
+    "Electronics are disproportionately carbon-intensive to manufacture — keeping a phone or laptop a year or two longer matters more than most purchase choices.",
+    "This category is the roughest estimate here (see Methodology) — treat it as a nudge, not a precise number.",
   ],
 };
 
@@ -197,6 +234,7 @@ function renderTips(results) {
 function recalculate() {
   const values = readInputs();
   document.getElementById("renewablePctLabel").textContent = `${values.renewablePct}%`;
+  renderGridNote(values.country);
 
   const results = calculate(values);
   document.getElementById("total-value").textContent = fmtTonnes(results.total);
@@ -224,6 +262,47 @@ function loadSavedInputs() {
   }
 }
 
+/** Reads recognized fields from the URL's query string, if any are present. */
+function loadInputsFromUrl() {
+  const params = new URLSearchParams(location.search);
+  if ([...params.keys()].length === 0) return null;
+  const values = {};
+  for (const field of FIELDS) {
+    if (params.has(field.id)) {
+      const raw = params.get(field.id);
+      values[field.id] = field.kind === "number" ? Number(raw) || 0 : raw;
+    }
+  }
+  return values;
+}
+
+function buildShareUrl() {
+  const values = readInputs();
+  const params = new URLSearchParams();
+  for (const field of FIELDS) {
+    if (values[field.id] !== "" && values[field.id] !== undefined) {
+      params.set(field.id, values[field.id]);
+    }
+  }
+  return `${location.origin}${location.pathname}?${params.toString()}`;
+}
+
+async function copyShareLink() {
+  const url = buildShareUrl();
+  const btn = document.getElementById("copy-link-btn");
+  try {
+    await navigator.clipboard.writeText(url);
+    btn.textContent = "Link copied!";
+  } catch {
+    window.prompt("Copy this link:", url);
+    btn.textContent = "Copy shareable link";
+    return;
+  }
+  setTimeout(() => {
+    btn.textContent = "Copy shareable link";
+  }, 1800);
+}
+
 function resetForm() {
   const defaults = {};
   for (const field of FIELDS) defaults[field.id] = field.default;
@@ -233,14 +312,19 @@ function resetForm() {
 }
 
 async function init() {
-  countryData = await fetch("data/co2-per-capita.json").then((r) => r.json());
+  [countryData, gridData] = await Promise.all([
+    fetch("data/co2-per-capita.json").then((r) => r.json()),
+    fetch("data/grid-intensity.json").then((r) => r.json()),
+  ]);
   populateCountrySelect();
 
-  const saved = loadSavedInputs();
+  const fromUrl = loadInputsFromUrl();
+  const saved = fromUrl ?? loadSavedInputs();
   if (saved) writeInputs(saved);
 
   document.getElementById("calc-form").addEventListener("input", recalculate);
   document.getElementById("reset-btn").addEventListener("click", resetForm);
+  document.getElementById("copy-link-btn").addEventListener("click", copyShareLink);
 
   recalculate();
 }

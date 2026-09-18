@@ -60,15 +60,24 @@
           </fieldset>
 
           <fieldset class="card">
+            <legend>🌍 Your country <span class="legend-sub">(sets your grid's carbon intensity + comparison)</span></legend>
+            <label>
+              Country
+              <select id="country"></select>
+            </label>
+          </fieldset>
+
+          <fieldset class="card">
             <legend>🏠 Home Energy <span class="legend-sub">(whole household)</span></legend>
 
             <label>
               Electricity use per month (kWh)
               <input type="number" id="elecKwhMonthly" min="0" step="1" value="300" />
             </label>
+            <span id="grid-intensity-note" class="hint grid-note"></span>
 
             <label>
-              Share from renewables (%)
+              Extra green tariff / self-generated, on top of your grid (%)
               <input type="range" id="renewablePct" min="0" max="100" step="5" value="0" />
               <span id="renewablePctLabel" class="range-value">0%</span>
             </label>
@@ -100,14 +109,20 @@
           </fieldset>
 
           <fieldset class="card">
-            <legend>🌍 Compare to</legend>
+            <legend>🛍️ Shopping &amp; Goods <span class="legend-sub">(optional, rough)</span></legend>
             <label>
-              Country
-              <select id="country"></select>
+              New goods &amp; services <span class="hint">(clothes, electronics, other purchases — not food/housing/travel)</span>
+              <select id="goods">
+                <option value="none">Very little (mostly secondhand/repair)</option>
+                <option value="low">Low (occasional purchases)</option>
+                <option value="average" selected>Average</option>
+                <option value="high">High (frequent new purchases)</option>
+              </select>
             </label>
           </fieldset>
 
           <div class="form-actions">
+            <button type="button" id="copy-link-btn" class="ghost-btn">Copy shareable link</button>
             <button type="button" id="reset-btn" class="ghost-btn">Reset</button>
           </div>
         </form>
@@ -134,10 +149,23 @@
             <summary>Methodology &amp; sources</summary>
             <p>
               Emission factors are rough, commonly-cited public averages (comparable to typical DEFRA/EPA-style
-              consumer calculators) for travel (car by type, bus, rail, flights), home energy (grid electricity,
-              natural gas), and diet (by broad dietary pattern). They are not country-specific, lifecycle-audited,
-              or a substitute for a professional carbon audit — treat the total as a rough order of magnitude and
-              the category breakdown as a guide to where your biggest levers are.
+              consumer calculators) for travel (car by type, bus, rail, flights), home heating (natural gas), and
+              diet (by broad dietary pattern). They are not lifecycle-audited or a substitute for a professional
+              carbon audit — treat the total as a rough order of magnitude and the category breakdown as a guide
+              to where your biggest levers are.
+            </p>
+            <p>
+              Electricity emissions <strong>do</strong> use a country-specific factor: once you pick a country, your
+              grid's actual carbon intensity (grams CO₂ per kWh) is used instead of a flat global average, from
+              <a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank" rel="noopener">Our World in Data / Ember</a>.
+              This varies enormously — from under 30 gCO₂/kWh in hydro/nuclear-heavy grids like Norway or France to
+              over 600 gCO₂/kWh in coal-heavy grids — so this one factor matters a lot for accuracy.
+            </p>
+            <p>
+              The "Shopping &amp; Goods" category is the roughest part of this calculator: it maps a subjective
+              consumption level to a broad kg CO₂e/year range in the spirit of environmentally-extended
+              input-output (EEIO) lifestyle-footprint studies (e.g. Ivanova et al. 2016), not a bottom-up
+              calculation. Treat it as a directional nudge, not a number to optimize precisely.
             </p>
             <p>
               The national comparison figure is each country's most recent per-capita CO<sub>2</sub> (excluding
@@ -146,7 +174,11 @@
               — an all-sectors average (industry, transport, power generation, government), not a personal
               lifestyle figure, so it's context rather than a like-for-like comparison.
             </p>
-            <p>Nothing you enter here is sent anywhere — inputs are saved only in your browser's local storage.</p>
+            <p>
+              Nothing you enter here is sent anywhere. Inputs are saved in your browser's local storage, and the
+              "Copy shareable link" button encodes them into the URL instead if you want to send a specific
+              scenario to someone else.
+            </p>
           </details>
         </section>
       </main>

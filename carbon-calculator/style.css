@@ -109,6 +109,12 @@ body {
   font-weight: 400;
 }
 
+.grid-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
 input[type="number"],
 select {
   padding: 7px 9px;
@@ -131,6 +137,7 @@ input[type="range"] {
 .form-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .ghost-btn {
