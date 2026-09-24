@@ -106,6 +106,12 @@
                 <option value="vegan">Vegan</option>
               </select>
             </label>
+
+            <label>
+              Fine-tune: red meat meals per week
+              <span class="hint">(beef/lamb specifically — auto-set from your diet above, editable)</span>
+              <input type="number" id="redMeatMeals" min="0" max="21" step="0.5" value="3" />
+            </label>
           </fieldset>
 
           <fieldset class="card">
@@ -123,6 +129,7 @@
 
           <div class="form-actions">
             <button type="button" id="copy-link-btn" class="ghost-btn">Copy shareable link</button>
+            <button type="button" id="download-btn" class="ghost-btn">Download summary</button>
             <button type="button" id="reset-btn" class="ghost-btn">Reset</button>
           </div>
         </form>
@@ -143,6 +150,16 @@
           <div class="tips" id="tips">
             <h3>Where to focus</h3>
             <ul id="tips-list"></ul>
+          </div>
+
+          <div class="scenarios" id="scenarios">
+            <h3>Saved scenarios <span class="legend-sub">(compare "what if" changes, up to 6)</span></h3>
+            <div class="scenario-save-row">
+              <input type="text" id="scenario-name" placeholder="Name this scenario…" maxlength="40" />
+              <button type="button" id="save-scenario-btn" class="ghost-btn">Save current</button>
+            </div>
+            <div id="scenario-bars"></div>
+            <div id="scenario-list"></div>
           </div>
 
           <details class="methodology">
@@ -168,6 +185,17 @@
               calculation. Treat it as a directional nudge, not a number to optimize precisely.
             </p>
             <p>
+              The "fine-tune red meat" field adjusts the diet total up or down from the typical weekly red-meat
+              frequency implied by your chosen diet pattern (about 7 meals/week for "meat with most meals," 3 for
+              "average," down to 0 for vegetarian/vegan), using a single commonly-cited approximate figure of
+              ~6.5 kg CO₂e per beef/lamb meal. It's a delta on top of the pattern baseline, not an independent
+              per-food-item model — changing the diet pattern resets it to that pattern's typical value.
+            </p>
+            <p>
+              Saved scenarios store your inputs (not a frozen result), so if you refresh this page after new data
+              is published, a saved scenario's numbers update too rather than staying stuck on old data.
+            </p>
+            <p>
               The national comparison figure is each country's most recent per-capita CO<sub>2</sub> (excluding
               land use/forestry) from the
               <a href="https://data.worldbank.org/indicator/EN.GHG.CO2.PC.CE.AR5" target="_blank" rel="noopener">World Bank</a>
@@ -175,9 +203,9 @@
               lifestyle figure, so it's context rather than a like-for-like comparison.
             </p>
             <p>
-              Nothing you enter here is sent anywhere. Inputs are saved in your browser's local storage, and the
-              "Copy shareable link" button encodes them into the URL instead if you want to send a specific
-              scenario to someone else.
+              Nothing you enter here is sent anywhere. Inputs (and any saved scenarios) live only in your browser's
+              local storage. "Copy shareable link" encodes the current inputs into a URL instead, and "Download
+              summary" saves a plain-text report to your device — both stay entirely on your side too.
             </p>
           </details>
         </section>

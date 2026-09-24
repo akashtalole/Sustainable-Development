@@ -15,7 +15,10 @@ Unlike `monitor/` (which needs MapLibre and a build step), this tool has no map,
 - **National comparison**: your total plotted against a 1.5°C-aligned 2030 target, the current global average, and your selected country's national per-capita figure (explicitly caveated as an all-sectors figure, not a personal one).
 - **Targeted tips**: rule-based, keyed to whichever category is currently your largest.
 - **Shareable links**: "Copy shareable link" encodes every input into the URL query string, so a specific scenario can be sent to someone else or bookmarked; loading such a link restores it exactly (and takes priority over anything saved locally).
-- **Local persistence**: inputs are also auto-saved to `localStorage` between visits. Nothing is ever sent to a server — this is a fully static, client-side page.
+- **Diet fine-tuning**: a "red meat meals per week" field sits below the diet-pattern dropdown, auto-set to that pattern's typical value and editable from there — see Methodology for how the delta is calculated.
+- **Saved scenarios**: save up to 6 named "what if" snapshots of your current inputs, see them compared against your current total on a shared bar chart, click a name to reload it, or delete it. Scenarios store inputs, not frozen numbers, so they stay accurate if the underlying data or methodology changes later.
+- **Export**: "Download summary" saves a plain-text report of your inputs and results to your device; a print stylesheet also makes Ctrl/Cmd+P produce a clean, form-free report instead of printing the interactive page as-is.
+- **Local persistence**: inputs (and saved scenarios) are auto-saved to `localStorage` between visits. Nothing is ever sent to a server — this is a fully static, client-side page.
 
 ## Methodology
 
@@ -26,7 +29,7 @@ Emission factors are rough, commonly-cited public averages (comparable to typica
 - **Flights** (kg CO₂e per passenger-km, short-haul vs long-haul), applied against typical round-trip distance assumptions (1,500 km short-haul, 11,000 km long-haul).
 - **Home electricity** (kg CO₂e/kWh) — country-specific grid intensity when a country is selected (see Comparison & grid data below), else a rough global average fallback (0.475 kg/kWh) — reduced further by any stated "extra green tariff" share on top of the grid.
 - **Home heating** (kg CO₂e/kWh of natural gas).
-- **Diet** (kg CO₂e/year, by broad dietary pattern — heavy meat, average, low meat, vegetarian, vegan), based on commonly-cited lifecycle estimates (in the range popularized by studies like Poore & Nemecek 2018).
+- **Diet** (kg CO₂e/year, by broad dietary pattern — heavy meat, average, low meat, vegetarian, vegan), based on commonly-cited lifecycle estimates (in the range popularized by studies like Poore & Nemecek 2018), adjusted up or down from the "red meat meals per week" field: each pattern implies a typical weekly frequency (7/3/0.5/0/0), and the field's value is compared against that implied figure using ~6.5 kg CO₂e per beef/lamb meal as the delta rate — not an independent per-food-item model, just a single tunable lever on top of the pattern baseline.
 - **Shopping & goods** (kg CO₂e/year, by a subjective consumption level) — a broad, EEIO-style ballpark (in the spirit of lifestyle-footprint studies like Ivanova et al. 2016), explicitly the least precise category in the tool. Included because it's a real and often large share of a footprint, but the page and this README both flag it as directional rather than exact.
 
 None of this is lifecycle-audited or a substitute for a professional carbon audit. The point is relative scale and which category to focus on, not a precise personal figure.
@@ -40,6 +43,7 @@ Home energy is entered as a household total and divided by household size; trave
 
 ## Known limitations
 
-- Diet and shopping categories are broad archetypes; there's no per-food-item or per-purchase breakdown.
+- Diet granularity is a single "red meat frequency" lever, not a full per-food-item breakdown (poultry, fish, dairy, and plant intake are still folded into the flat pattern baseline).
 - The shopping & goods category is a rough consumption-level mapping, not a bottom-up calculation — see Methodology.
 - Car "electric" mode uses the same grid factor as home electricity, which is directionally right but doesn't account for charging-time-of-day effects or a dedicated EV tariff.
+- Saved scenarios live in `localStorage`, so they're per-browser, not synced across devices — "Copy shareable link" is the way to move a specific scenario elsewhere.

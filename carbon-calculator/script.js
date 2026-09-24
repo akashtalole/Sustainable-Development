@@ -28,7 +28,9 @@ const FACTORS = {
   gasPerKwh: 0.203, // kg CO2e per kWh, natural gas combustion
 };
 
-// Rough annual personal footprint by diet type, in kg CO2e/year.
+// Rough annual personal footprint by diet type, in kg CO2e/year. Each
+// pattern implies a typical red-meat frequency (below) that the
+// "fine-tune" field is measured against as a delta, not an absolute.
 const DIET_FOOTPRINT_KG = {
   heavy: 3300,
   average: 2500,
@@ -36,6 +38,16 @@ const DIET_FOOTPRINT_KG = {
   vegetarian: 1700,
   vegan: 1500,
 };
+
+const IMPLIED_RED_MEAT_MEALS_PER_WEEK = {
+  heavy: 7,
+  average: 3,
+  low: 0.5,
+  vegetarian: 0,
+  vegan: 0,
+};
+
+const RED_MEAT_KG_PER_MEAL = 6.5; // rough, commonly-cited figure for a beef/lamb portion
 
 // Rough annual personal footprint for new goods & services (clothes,
 // electronics, other purchases), in kg CO2e/year — see the in-page
@@ -65,11 +77,14 @@ const FIELDS = [
   { id: "gasKwhMonthly", kind: "number", default: 200 },
   { id: "householdSize", kind: "number", default: 2 },
   { id: "diet", kind: "select", default: "average" },
+  { id: "redMeatMeals", kind: "number", default: 3 },
   { id: "goods", kind: "select", default: "average" },
   { id: "country", kind: "select", default: "" },
 ];
 
 const STORAGE_KEY = "carbon-calculator-inputs-v1";
+const SCENARIOS_KEY = "carbon-calculator-scenarios-v1";
+const MAX_SCENARIOS = 6;
 
 const CATEGORY_COLOR = { travel: "#0a97d9", home: "#fcc30b", diet: "#3f7e44", goods: "#bf8b2e" };
 const CATEGORY_LABEL = { travel: "Travel", home: "Home", diet: "Diet", goods: "Shopping" };
@@ -94,12 +109,35 @@ function writeInputs(values) {
     el.value = values[field.id];
   }
   document.getElementById("renewablePctLabel").textContent = `${values.renewablePct ?? 0}%`;
+  updateRedMeatEnabled(values.diet ?? document.getElementById("diet").value);
+}
+
+/** Vegetarian/vegan diets can't have a red-meat frequency; disable & zero the field for those. */
+function updateRedMeatEnabled(diet) {
+  const input = document.getElementById("redMeatMeals");
+  const disabled = diet === "vegetarian" || diet === "vegan";
+  input.disabled = disabled;
+  if (disabled) input.value = 0;
+}
+
+/** Reset the fine-tune field to the new diet pattern's typical value. Only called on user-driven diet changes, never on restore (which should keep the saved fine-tune value). */
+function syncRedMeatToDiet() {
+  const diet = document.getElementById("diet").value;
+  document.getElementById("redMeatMeals").value = IMPLIED_RED_MEAT_MEALS_PER_WEEK[diet] ?? 0;
+  updateRedMeatEnabled(diet);
 }
 
 /** kg CO2e per kWh for the given country, falling back to a global average. */
 function electricityFactorFor(countryIso3) {
   const grid = gridData[countryIso3];
   return grid ? grid.gPerKwh / 1000 : FACTORS.electricityPerKwhFallback;
+}
+
+function dietFootprintKg(v) {
+  const base = DIET_FOOTPRINT_KG[v.diet] ?? DIET_FOOTPRINT_KG.average;
+  const implied = IMPLIED_RED_MEAT_MEALS_PER_WEEK[v.diet] ?? IMPLIED_RED_MEAT_MEALS_PER_WEEK.average;
+  const delta = (v.redMeatMeals - implied) * RED_MEAT_KG_PER_MEAL * 52;
+  return Math.max(0, base + delta);
 }
 
 function calculate(v) {
@@ -117,7 +155,7 @@ function calculate(v) {
   const householdSize = Math.max(1, v.householdSize);
   const homeKg = (elecKg + gasKg) / householdSize;
 
-  const dietKg = DIET_FOOTPRINT_KG[v.diet] ?? DIET_FOOTPRINT_KG.average;
+  const dietKg = dietFootprintKg(v);
   const goodsKg = GOODS_FOOTPRINT_KG[v.goods] ?? GOODS_FOOTPRINT_KG.average;
 
   return {
@@ -209,7 +247,7 @@ const TIPS = {
     "If your gas heating use is high, a heat pump can cut this category substantially over time, though the upfront cost is real.",
   ],
   diet: [
-    "Cutting red meat to a few times a week (rather than daily) is one of the single biggest per-meal changes most people can make.",
+    "The fine-tune field below the diet dropdown shows exactly how much each red-meat meal you drop is worth — try lowering it by a couple a week.",
     "Shifting a few meat meals a week to plant-based alternatives adds up faster than most people expect.",
     "Food waste counts too — the emissions from producing food that's thrown out are 'wasted' twice.",
   ],
@@ -231,6 +269,145 @@ function renderTips(results) {
   list.innerHTML = items.map((t) => `<li>${t}</li>`).join("");
 }
 
+// --- Scenarios --------------------------------------------------------------
+
+function loadScenarios() {
+  try {
+    const raw = localStorage.getItem(SCENARIOS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveScenarios(list) {
+  localStorage.setItem(SCENARIOS_KEY, JSON.stringify(list));
+}
+
+function addScenario(name) {
+  const list = loadScenarios();
+  const scenario = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: name || `Scenario ${list.length + 1}`,
+    savedAt: Date.now(),
+    values: readInputs(),
+  };
+  list.push(scenario);
+  while (list.length > MAX_SCENARIOS) list.shift(); // drop oldest once over the cap
+  saveScenarios(list);
+  renderScenarios();
+}
+
+function deleteScenario(id) {
+  saveScenarios(loadScenarios().filter((s) => s.id !== id));
+  renderScenarios();
+}
+
+function applyScenario(id) {
+  const scenario = loadScenarios().find((s) => s.id === id);
+  if (!scenario) return;
+  writeInputs(scenario.values);
+  recalculate();
+}
+
+/** Scenarios store inputs, not frozen results, so totals here are always recomputed with the current methodology/data. */
+function renderScenarios() {
+  const list = loadScenarios();
+  const listEl = document.getElementById("scenario-list");
+  const barsEl = document.getElementById("scenario-bars");
+
+  if (list.length === 0) {
+    listEl.innerHTML = `<div class="scenario-empty">No saved scenarios yet — name one above and save it to compare "what if" changes side by side.</div>`;
+    barsEl.innerHTML = "";
+    return;
+  }
+
+  const currentTotalT = calculate(readInputs()).total / 1000;
+  const rows = list.map((s) => ({ ...s, totalT: calculate(s.values).total / 1000 }));
+  const max = Math.max(currentTotalT, ...rows.map((r) => r.totalT), 1) * 1.1;
+
+  const bar = (label, valueT, color) => `
+    <div class="compare-row">
+      <span class="compare-label">${label}</span>
+      <span class="compare-track"><span class="compare-fill" style="width:${(valueT / max) * 100}%;background:${color}"></span></span>
+      <span class="compare-value">${valueT.toFixed(1)} t</span>
+    </div>`;
+
+  barsEl.innerHTML = [bar("Current", currentTotalT, "#56c02b"), ...rows.map((r) => bar(r.name, r.totalT, "#0a97d9"))].join("");
+
+  listEl.innerHTML = rows
+    .map(
+      (r) => `
+      <div class="scenario-row">
+        <span class="scenario-name" data-action="load" data-id="${r.id}" title="Load this scenario">${r.name}</span>
+        <span class="scenario-total">${r.totalT.toFixed(1)} t</span>
+        <button type="button" class="scenario-delete" data-action="delete" data-id="${r.id}" aria-label="Delete ${r.name}">&times;</button>
+      </div>`
+    )
+    .join("");
+}
+
+function saveCurrentScenario() {
+  const nameInput = document.getElementById("scenario-name");
+  addScenario(nameInput.value.trim());
+  nameInput.value = "";
+}
+
+function onScenarioListClick(e) {
+  const target = e.target.closest("[data-action]");
+  if (!target) return;
+  const { action, id } = target.dataset;
+  if (action === "load") applyScenario(id);
+  if (action === "delete") deleteScenario(id);
+}
+
+// --- Export -----------------------------------------------------------------
+
+function buildSummaryText(values, results) {
+  const country = countryData[values.country];
+  const lines = [
+    "Carbon Footprint Summary",
+    new Date().toLocaleDateString(),
+    "",
+    `Total: ${fmtTonnes(results.total)} tCO2e/year`,
+    "",
+    "Breakdown:",
+    ...["travel", "home", "diet", "goods"].map((k) => `  ${CATEGORY_LABEL[k]}: ${fmtTonnes(results[k])} t`),
+    "",
+    "Inputs:",
+    `  Car: ${values.carType}, ${values.carKmWeekly} km/week`,
+    `  Bus: ${values.busKmWeekly} km/week | Rail: ${values.railKmWeekly} km/week`,
+    `  Flights/year: ${values.shortFlights} short-haul, ${values.longFlights} long-haul`,
+    `  Country (for grid + comparison): ${country ? country.name : "(none selected)"}`,
+    `  Electricity: ${values.elecKwhMonthly} kWh/month household, +${values.renewablePct}% extra green tariff`,
+    `  Gas/heating: ${values.gasKwhMonthly} kWh/month household`,
+    `  Household size: ${values.householdSize}`,
+    `  Diet: ${values.diet} (${values.redMeatMeals} red-meat meals/week)`,
+    `  Shopping & goods: ${values.goods}`,
+    "",
+    "Estimates use rough public emission factors, not a professional audit — see the calculator's Methodology panel.",
+    "Generated by the SDG Carbon Footprint Calculator (static, client-side only — nothing was sent anywhere).",
+  ];
+  return lines.join("\n");
+}
+
+function downloadSummary() {
+  const values = readInputs();
+  const results = calculate(values);
+  const text = buildSummaryText(values, results);
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "carbon-footprint-summary.txt";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// --- Main recalculation -------------------------------------------------------
+
 function recalculate() {
   const values = readInputs();
   document.getElementById("renewablePctLabel").textContent = `${values.renewablePct}%`;
@@ -241,6 +418,7 @@ function recalculate() {
   renderBreakdown(results);
   renderCompare(results, values.country);
   renderTips(results);
+  renderScenarios();
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
 }
@@ -323,8 +501,12 @@ async function init() {
   if (saved) writeInputs(saved);
 
   document.getElementById("calc-form").addEventListener("input", recalculate);
+  document.getElementById("diet").addEventListener("input", syncRedMeatToDiet);
   document.getElementById("reset-btn").addEventListener("click", resetForm);
   document.getElementById("copy-link-btn").addEventListener("click", copyShareLink);
+  document.getElementById("download-btn").addEventListener("click", downloadSummary);
+  document.getElementById("save-scenario-btn").addEventListener("click", saveCurrentScenario);
+  document.getElementById("scenario-list").addEventListener("click", onScenarioListClick);
 
   recalculate();
 }
