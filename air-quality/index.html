@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Air Quality Monitor</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="app-header">
+        <div class="brand">
+          <span class="brand-title">Air Quality Monitor</span>
+          <span class="brand-sub">Live PM2.5 &amp; AQI across a global sensor network — SDG 11, Sustainable Cities</span>
+        </div>
+        <div class="header-controls">
+          <span id="alarm-badge" class="alarm-badge" hidden></span>
+          <button id="locate-btn" class="ghost-btn" type="button">Use my location</button>
+          <button id="list-toggle" class="ghost-btn" type="button">Stations</button>
+        </div>
+      </header>
+
+      <main id="map-wrap">
+        <div id="map"></div>
+
+        <div id="legend">
+          <div class="legend-title">US AQI</div>
+          <div id="legend-items"></div>
+        </div>
+
+        <aside id="side-panel" hidden>
+          <div class="side-panel-header">
+            <button id="side-panel-back" class="ghost-btn" type="button" hidden>&larr; Stations</button>
+            <span id="side-panel-title"></span>
+            <button id="side-panel-close" class="icon-btn" type="button" aria-label="Close">&times;</button>
+          </div>
+          <div id="side-panel-body"></div>
+        </aside>
+      </main>
+
+      <footer id="app-footer">
+        Data: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo Air Quality API</a>
+        (free, no key, fetched live on load — nothing cached or sent anywhere) · AQI scale: US EPA ·
+        Dashboard pattern inspired by <a href="https://thingsboard.io/use-cases/environment-monitoring/" target="_blank" rel="noopener">ThingsBoard's environment monitoring use case</a> ·
+        See also: <a href="../">home</a> · <a href="../sdg-ideas/">project ideas</a> · <a href="../challenges-2026/">2026 challenges</a> ·
+        <a href="../monitor/">SDG World Monitor</a> · <a href="../carbon-calculator/">carbon calculator</a>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

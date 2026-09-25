@@ -32,7 +32,9 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: monitor/package-lock.json
+          cache-dependency-path: |
+            monitor/package-lock.json
+            air-quality/package-lock.json
 
       - name: Install docs dependencies
         run: pip install -r requirements.txt
@@ -58,6 +60,19 @@ jobs:
           mkdir -p site/carbon-calculator
           cp carbon-calculator/index.html carbon-calculator/style.css carbon-calculator/script.js site/carbon-calculator/
           cp -r carbon-calculator/data site/carbon-calculator/data
+
+      - name: Install air quality monitor dependencies
+        working-directory: air-quality
+        run: npm ci
+
+      - name: Build air quality monitor
+        working-directory: air-quality
+        run: npm run build
+
+      - name: Merge air quality monitor into docs site
+        run: |
+          mkdir -p site/air-quality
+          cp -r air-quality/dist/. site/air-quality/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
